@@ -1,0 +1,20 @@
+// DatasetRH
+let
+    Fonte = Csv.Document(File.Contents("C:\Users\danie\OneDrive\Documents\PowerBIDSA\Cap06\DatasetRH.csv"),[Delimiter=",", Columns=21, Encoding=65001, QuoteStyle=QuoteStyle.None]),
+    #"Cabeçalhos Promovidos" = Table.PromoteHeaders(Fonte, [PromoteAllScalars=true]),
+    #"Tipo Alterado" = Table.TransformColumnTypes(#"Cabeçalhos Promovidos",{{"Id_Funcionario", Int64.Type}, {"Idade", Int64.Type}, {"Genero", type text}, {"Estado Civil", type text}, {"Departamento", type text}, {"Funcao", type text}, {"Viagem", type text}, {"Valor Diaria", Int64.Type}, {"Indice_Envolvimento_Trabalho", Int64.Type}, {"Nivel_Satisfacao_Trabalho", Int64.Type}, {"Salario_Mensal", Int64.Type}, {"Numero_Empresas_Anteriores", Int64.Type}, {"Disponivel_Hora_Extra", type text}, {"Percentual_Ultimo_Aumento_Salario", Int64.Type}, {"Aval_Performance", Int64.Type}, {"Anos_Experiencia", Int64.Type}, {"Numero_Treinamentos_Ano_Anterior", Int64.Type}, {"Anos_na_Empresa", Int64.Type}, {"Anos_Funcao_Atual", Int64.Type}, {"Anos_Desde_Ultima_Promocao", Int64.Type}, {"Anos_com_Gerente_Atual", Int64.Type}}),
+    #"Coluna Condicional Adicionada" = Table.AddColumn(#"Tipo Alterado", "StatusPromo", each if [Anos_Desde_Ultima_Promocao] > 10 then "Considerar Promoção Imediata" else if [Anos_Desde_Ultima_Promocao] <= 10 then "Não Considerar Promoção Imediata" else null),
+    #"Valor Substituído" = Table.ReplaceValue(#"Coluna Condicional Adicionada","S","Sim",Replacer.ReplaceText,{"Disponivel_Hora_Extra"}),
+    #"Valor Substituído1" = Table.ReplaceValue(#"Valor Substituído","N","Não",Replacer.ReplaceText,{"Disponivel_Hora_Extra"}),
+    #"Coluna Condicional Adicionada1" = Table.AddColumn(#"Valor Substituído1", "Personalizar", each if [Indice_Envolvimento_Trabalho] = 1 then "Ruim" else if [Indice_Envolvimento_Trabalho] = 2 then "Baixo" else if [Indice_Envolvimento_Trabalho] = 3 then "Médio" else if [Indice_Envolvimento_Trabalho] = 4 then "Alto" else null),
+    #"Colunas Renomeadas" = Table.RenameColumns(#"Coluna Condicional Adicionada1",{{"Personalizar", "Envolvimento_Trabalho"}})
+in
+    #"Colunas Renomeadas"
+
+// Medidas
+let
+    Fonte = Table.FromRows(Json.Document(Binary.Decompress(Binary.FromText("i44FAA==", BinaryEncoding.Base64), Compression.Deflate)), let _t = ((type nullable text) meta [Serialized.Text = true]) in type table [#"Coluna 1" = _t]),
+    #"Tipo Alterado" = Table.TransformColumnTypes(Fonte,{{"Coluna 1", type text}}),
+    #"Colunas Removidas" = Table.RemoveColumns(#"Tipo Alterado",{"Coluna 1"})
+in
+    #"Colunas Removidas"
